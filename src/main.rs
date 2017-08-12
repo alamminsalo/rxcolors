@@ -16,7 +16,7 @@ fn print_args() {
   println!("Arguments:");
   println!("list\t\t\tPrints all color theme names");
   println!("search <query>\t\tSearches for given string");
-  println!("get <themename>\t\tFetches theme and prints to stdout");
+  println!("<themename>\t\tFetches theme and prints to stdout");
 }
 
 // Fn to request themes
@@ -71,10 +71,11 @@ fn main() {
 
   // Parse args
   let mut it = env::args().into_iter().peekable();
+  it.next();
   while let Some(arg) = it.next() {
     if arg == "list" {
       get_themes_and(&print_theme);
-      break;
+      return;
     }
 
     else if arg == "search" {
@@ -84,21 +85,18 @@ fn main() {
 	    print_theme(theme);
 	  }
 	  });
-      break;
+      return;
     }
 
-    else if arg == "get" {
-      let q = Some(it.next().unwrap().clone()).unwrap();
+    else {
       get_themes_and(&|theme: &serde_json::Value|{
-	if theme["name"].as_str().unwrap().trim() == q {
+	if theme["name"].as_str().unwrap().trim() == arg {
 	  download_theme(theme["download_url"].as_str().unwrap());
 	}
       });
-      break;
-    }
-
-    else if it.peek() == None {
-      print_args();
+      return;
     }
   }
+
+  print_args();
 }
