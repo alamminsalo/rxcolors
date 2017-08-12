@@ -14,6 +14,10 @@ use std::str;
 
 fn print_args() {
   println!("Arguments:");
+  println!("list\t\t\tPrints all color theme names");
+  println!("search <query>\t\tSearches for given string");
+  println!("get <themename>\t\tFetches theme and prints to stdout");
+  println!("--help\t\t\tPrints help");
 }
 
 // Fn to request themes
@@ -84,7 +88,7 @@ fn main() {
       break;
     }
 
-    else if arg == "set" {
+    else if arg == "get" {
       let q = Some(it.next().unwrap().clone()).unwrap();
       get_themes_and(&|theme: &serde_json::Value|{
 	if theme["name"].as_str().unwrap().trim() == q {
