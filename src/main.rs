@@ -87,7 +87,7 @@ fn main() {
     else if arg == "set" {
       let q = Some(it.next().unwrap().clone()).unwrap();
       get_themes_and(&|theme: &serde_json::Value|{
-	if theme["name"].as_str().unwrap() == q {
+	if theme["name"].as_str().unwrap().trim() == q {
 	  download_theme(theme["download_url"].as_str().unwrap());
 	}
       });
