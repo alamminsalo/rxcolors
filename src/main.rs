@@ -17,7 +17,6 @@ fn print_args() {
   println!("list\t\t\tPrints all color theme names");
   println!("search <query>\t\tSearches for given string");
   println!("get <themename>\t\tFetches theme and prints to stdout");
-  println!("--help\t\t\tPrints help");
 }
 
 // Fn to request themes
@@ -98,7 +97,7 @@ fn main() {
       break;
     }
 
-    else if arg == "--help" || it.peek() == None {
+    else if it.peek() == None {
       print_args();
     }
   }
