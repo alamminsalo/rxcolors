@@ -4,13 +4,50 @@ extern crate hyper_tls;
 extern crate tokio_core;
 extern crate serde_json;
 
-use futures::{Future, Stream};
+use futures::{future, Future, Stream, BoxFuture, IntoFuture};
 use hyper::{Method, Request, Client, Chunk, StatusCode};
-use hyper_tls::HttpsConnector;
+use hyper::client::FutureResponse;
+use hyper_tls::{HttpsConnector, HttpsConnecting};
 use tokio_core::reactor::Core;
 use serde_json::{Value};
 use std::env;
 use std::str;
+use std::io;
+
+// Struct for JSON calls
+struct GithubAPI {
+    client: Client<HttpsConnector<hyper::client::HttpConnector>>
+}
+
+impl GithubAPI {
+
+
+
+    // fn that adds needed headers to function
+    fn add_headers(req: &mut Request) {
+        req.headers_mut().set_raw("Accept", "application/vnd.github.v3+json".to_owned());
+        req.headers_mut().set_raw("User-Agent", "rxres".to_owned());
+    }
+
+    fn get<A,B,F>(&self, url: &str) -> futures::AndThen<A,B,F> 
+        where 
+            A: Future<Item = serde_json::Value, Error = io::Error>, 
+            B: IntoFuture,
+            F: FnOnce(A::Item) -> B
+            {
+        let mut req = Request::new(Method::Get, url.parse().unwrap());
+        Self::add_headers(&mut req);
+
+        self.client.request(req)
+            .and_then(|res| {
+            if res.status() == StatusCode::Ok {
+                res.body().concat2().and_then(move |data: Chunk| {
+                    Ok((serde_json::from_slice(&data).unwrap()))
+                });
+            }
+        })
+    }
+}
 
 fn print_args() {
     println!("Arguments:");
@@ -66,6 +103,9 @@ fn download_theme(url: &str) {
 // Main
 fn main() {
 
+    let mut core = Core::new().unwrap();
+    let api = GithubAPI{client: Client::configure().connector(HttpsConnector::new(4, &core.handle()).unwrap()).build(&core.handle())};
+
     // Closure operations
     let print_theme = |theme: &serde_json::Value| println!("{}", theme["name"].as_str().unwrap());
 
@@ -90,7 +130,7 @@ fn main() {
                     print_theme(theme);
                 }
             });
-            
+
             get_themes_and(base64_url, &move |theme: &serde_json::Value| {
                 if theme["name"].as_str().unwrap().contains(&q) {
                     print_theme(theme);
@@ -116,3 +156,5 @@ fn main() {
 
     print_args();
 }
+
+
